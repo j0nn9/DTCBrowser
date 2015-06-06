@@ -11,14 +11,38 @@
 - written in pure C++
 - binaries available for Windows and Linux
 
-
-## Development status
+## Development status:
 **Caution**: This project is currently in alpha status, use can lead to loss of coins:
 Do not use with your main wallet!!
 
 Any participation is welcome and encouraged.
 
 Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
+
+## Getting started:
+- Linux:
+  - add something like:
+  `rpcuser=<user>
+  rpcpassword=<password>
+  server=1`
+  to ~/.datacoin/datacoin.conf
+
+  - run `./datacoin-http-server -u <user> -p <password>`
+
+- Windows:
+  - press windows-key + r
+  - type: %AppData%
+  - navigate to / create folder Datacoin
+  - open / create file datacoin.conf
+  - type:
+  `rpcuser=<user>
+  rpcpassword=<password>
+  server=1`
+  - save file
+  - start datacoin wallet
+  - edit start-datacoin-browser.bat
+  - set `-u <user> and -p <password>` according to the settings in datacoin.conf
+  - save file and run start-datacoin-browser.bat
 
 ---
 ## Develop web applications within the blockchain
