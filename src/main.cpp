@@ -43,15 +43,42 @@
 "  -h  --help                     print this message                       \n"
 #else
 #define HELP \
+"  DTCBrowser  Copyright (C)  2015  Jonny Frey  <j0nn9.fr39@gmail.com>     \n"\
+"                                                                          \n"\
 "  -u  --rpc-user                 datacoin rpc username                    \n"\
 "  -p  --rpc-passwd               datacoin rpc password                    \n"\
 "      --scan-all                 scan the whole blockchain                \n"\
 "      --testnet                  connect to testnet                       \n"\
 "      --local [DIR]              run additional local server in DIR       \n"\
+"      --license                  print license information                \n"\
 "  -h  --help                     print this message                       \n"
 #endif
 
+#define LICENSE \
+"    DTCBrowser is a local Datacoin (DTC) BlockChain access server         \n"\
+"                                                                          \n"\
+"    Copyright (C)  2015  Jonny Frey  <j0nn9.fr39@gmail.com>               \n"\
+"                                                                          \n"\
+"    This program is free software: you can redistribute it and/or modify  \n"\
+"    it under the terms of the GNU General Public License as published by  \n"\
+"    the Free Software Foundation, either version 3 of the License, or     \n"\
+"    (at your option) any later version.                                   \n"\
+"                                                                          \n"\
+"    This program is distributed in the hope that it will be useful,       \n"\
+"    but WITHOUT ANY WARRANTY; without even the implied warranty of        \n"\
+"    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         \n"\
+"    GNU General Public License for more details.                          \n"\
+"                                                                          \n"\
+"    You should have received a copy of the GNU General Public License     \n"\
+"    along with this program.  If not, see <http://www.gnu.org/licenses/>. \n"
+
+
 int main(int argc, char *argv[]) {
+
+  if (has_arg("--license")) {
+    cout << LICENSE;
+    exit(EXIT_SUCCESS);
+  }
 
   if (has_arg("-h", "--help")        || 
       !has_arg("-u", "--rpc-user")   ||
