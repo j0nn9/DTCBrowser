@@ -1,0 +1,36 @@
+0        regex/4096 .*function.*\(.*\).*[{].*        JavaScript
+!:mime   application/javascript
+
+0        regex/4096 .*[{].*".*".*:.*".*".*,.*        JSON
+!:mime   application/json
+
+0        search/4096    ={
+>&0      search/1024    =transition-
+>>&0     search/1024    =}              CSS3
+!:mime   text/css
+
+0        search/4096    ={
+>&0      search/1024    =background:
+>>&0     search/1024    =}              CSS
+!:mime   text/css
+
+0        search/4096    ={
+>&0      search/1024    =border:
+>>&0     search/1024    =}              CSS
+!:mime   text/css
+
+0        search/4096    ={
+>&0      search/1024    =margin:
+>>&0     search/1024    =}              CSS
+!:mime   text/css
+
+
+0        search/4096    ={
+>&0      search/1024    =padding:
+>>&0     search/1024    =}              CSS
+!:mime   text/css
+
+0        search/4096    ={
+>&0      search/1024    =color:
+>>&0     search/1024    =}              CSS
+!:mime   text/css

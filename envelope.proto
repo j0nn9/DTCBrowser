@@ -1,0 +1,129 @@
+/**
+ * Envelope is a metadata format in Datacoin blockchain
+ *
+ * Copyright (C)  2015  Jonny Frey  <j0nn9.fr39@gmail.com>
+ * Copyright (C)  2013  The Datacoin developers
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+message Envelope {
+  enum CompressionMethod {
+    None = 0; 
+    Bzip2 = 1;
+    Xz = 2;
+  }
+
+  enum UpdateMethod {
+    Replace = 0;
+    ApplyDiff = 1;
+  }
+
+  optional string FileName = 1;
+
+  /* will be sent to web browser as is in HTTP header */
+  optional string ContentType = 2; 
+  required CompressionMethod Compression = 3;
+
+  /* datacoin address used with signmessage */
+  optional string PublicKey = 4;
+
+  /* output of datacoind signmessage <PublicKey> <DataHash> */
+  optional string Signature = 5;
+
+  /* Big files can be sent as several txes */
+  optional uint32 PartNumber = 6; // starts from one!!
+  optional uint32 TotalParts = 7; 
+
+  /* obsolete because of possible replay attacks */
+  optional string PrevTxId = 8;
+
+  required bytes Data = 9;
+  
+  /* hash is created over all available fields except signature */
+  optional string PrevDataHash = 10;
+
+  /* avoid replay attacks on updates */
+  optional uint32 DateTime = 11;
+
+  /* set to 2 for now */
+  optional uint32 version = 12;
+
+  extensions 10000 to max;
+};
+
+/**
+ * Overview of envelope rules
+ *
+ * 1. Only CompressionMethod and Data fields are required. Compression method can
+ *    be set to "None" (means no compression).
+ *
+ * 2. ContentType will help to sort data by content (all PGP key or all FOAF files) and
+ *    will be provided to web browser as is in HTTP header. ContentType is optional.
+ *
+ * 3. Files bigger than max tx size (> 128Kb) are to be sent in form of sequences.
+ *    PartNumber, TotalParts, Signature and PrevDataHash fields are to be used.
+ *    Signature proves that the second part is sent by the same person.
+ *
+ * 4. To indicate that this file is a new version of some other file previously stored
+ *    in blockchain this new file has to be signed with datacoin address corresponding
+ *    to public key of the file it updates.
+ *    Signature and PrevDataHash fields are used to updates old data.
+ *
+ *    Note: Data without PublicKey can't be updated.
+ *
+ * Big files
+ *
+ * Due to a tx size limitation big files are to be packed into a sequence of transactions:
+ *
+ * Part 1: {
+ *   PublicKey  = datacoin address
+ *   Signature  = datacoin signmessage <public> <hash of this part and all of its envelope fileds>
+ *   PartNumber = 1
+ *   DateTime   = <current date>
+ *   version    = 2
+ *   TotalParts = total number of txes in sequence
+ *   .. other fields
+ * }
+ *
+ * Part 2 .. TotalParts: {
+ *   PublicKey isn't defined
+ *   Signature    = datacoin signmessage <public> <hash of this part and all of its envelope fileds>
+ *   PartNumber   = 2
+ *   PrevDataHash = <hash of part 1 and all of its envelope fileds>
+ *   DateTime     = <has to be greater than part1.DateTime>
+ *   version    = 2
+ *   TotalParts = total number of txes in sequence
+ *   ... other fields
+ * }
+ *
+ * Updates
+ *
+ * Files are addressed by Datacoin. File name is stored for user's convenience only. In order to update
+ * already stored in blockchain file an update must be sent following way:
+ *
+ * {
+ *   PrevDataHash = DataHash of the FIRST Envelope file and part among all updates
+ *   Signature    = datacoin signmessage <public> <hash of this part and all of its envelope fileds>
+ *   PrevDataHash = <hash of part 1 and all of its envelope fileds>
+ *   DateTime     = <has to be greater than <first file, first part>.DateTime>
+ *   version      = 2
+ *   ... other fields
+ * }
+
+ * Updating something with big file
+ *
+ * Big files are to be splitted into a sequence if txes. In this case first tx in sequence points
+ * to the tx we are updating (with PrevDataHash and Signature). All other txes in the sequence will
+ * follow rules provided above in "Big files" section.
+ */
