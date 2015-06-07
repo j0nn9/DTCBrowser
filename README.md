@@ -21,7 +21,7 @@ Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
 
 ## Getting started:
 - Linux:
-  - add something like:
+  - add something like: <br />
   `rpcuser=<user>` <br />
   `rpcpassword=<password>` <br />
   `server=1` <br />
@@ -34,10 +34,10 @@ Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
   - type: %AppData%
   - navigate to / create folder Datacoin
   - open / create file datacoin.conf
-  - type:
-  `rpcuser=<user>
-  rpcpassword=<password>
-  server=1`
+  - type: <br />
+  `rpcuser=<user>` <br />
+  `rpcpassword=<password>` <br />
+  `server=1` <br />
   - save file
   - start datacoin wallet
   - edit start-datacoin-browser.bat
