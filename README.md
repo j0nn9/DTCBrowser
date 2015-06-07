@@ -28,7 +28,7 @@ Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
   to ~/.datacoin/datacoin.conf
 
   - run `./datacoin-http-server -u <user> -p <password>`
-  - open [http://localhost:8080] in your browser
+  - open [http://localhost:8080](http://localhost:8080) in your browser
 
 - Windows:
   - press windows-key + r
@@ -44,7 +44,7 @@ Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
   - edit start-datacoin-browser.bat
   - set `-u <user> and -p <password>` according to the settings in datacoin.conf
   - save file and run start-datacoin-browser.bat
-  - open [http://localhost:8080] in your browser
+  - open [http://localhost:8080](http://localhost:8080) in your browser
 
 ---
 ## Develop web applications within the blockchain
