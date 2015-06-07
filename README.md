@@ -1,4 +1,4 @@
-# DTCBrowser - a local Datacoin (DTC) BlockChain access server
+# DTCBrowser - a local Datacoin (DTC) HTTP BlockChain access server
 ![ScreenShot](https://github.com/j0nn9/DTCBrowser/raw/master/preview.png)
 
 ---
@@ -28,6 +28,7 @@ Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
   to ~/.datacoin/datacoin.conf
 
   - run `./datacoin-http-server -u <user> -p <password>`
+  - open [http://localhost:8080] in your browser
 
 - Windows:
   - press windows-key + r
@@ -43,6 +44,7 @@ Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
   - edit start-datacoin-browser.bat
   - set `-u <user> and -p <password>` according to the settings in datacoin.conf
   - save file and run start-datacoin-browser.bat
+  - open [http://localhost:8080] in your browser
 
 ---
 ## Develop web applications within the blockchain
