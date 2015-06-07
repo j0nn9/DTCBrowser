@@ -22,9 +22,9 @@ Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
 ## Getting started:
 - Linux:
   - add something like:
-  `rpcuser=<user>
-  rpcpassword=<password>
-  server=1`
+  `rpcuser=<user>` <br />
+  `rpcpassword=<password>` <br />
+  `server=1` <br />
   to ~/.datacoin/datacoin.conf
 
   - run `./datacoin-http-server -u <user> -p <password>`
