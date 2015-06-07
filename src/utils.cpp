@@ -35,6 +35,8 @@
 #include <sstream>
 #include <openssl/sha.h>
 #include <iomanip>
+#include "std-magic.mgc.bz2.h"
+#include "dtc-magic.mgc.bz2.h"
 
 using namespace std;
 
@@ -198,6 +200,17 @@ string file_content(string file) {
   if (!init) {
     init = true;
 
+    string std_magic = bzip2_decompress(string((char *) std_magic_mgc_bz2, std_magic_mgc_bz2_len));
+    string dtc_magic = bzip2_decompress(string((char *) dtc_magic_mgc_bz2, dtc_magic_mgc_bz2_len));
+
+    char *buffer[2];
+    buffer[0] = strdup(dtc_magic);
+    buffer[1] = strdup(std_magic);
+
+    size_t size[2];
+    size[0] = dtc_magic.length();
+    size[1] = std_magic.length();
+
     /* initialize file magic */
     magic_cookie = magic_open(MAGIC_MIME);
  
@@ -206,7 +219,7 @@ string file_content(string file) {
       exit(EXIT_FAILURE);
     }
 
-    if (magic_load(magic_cookie, "dtc-magic.mgc:std-magic.mgc") != 0) {
+    if (magic_load_buffers(magic_cookie, (void **) buffer, size, 2) != 0) {
       cerr << "cannot load magic database - " << magic_error(magic_cookie) << endl;
       magic_close(magic_cookie);
       exit(EXIT_FAILURE);
