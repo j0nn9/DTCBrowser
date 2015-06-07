@@ -97,6 +97,11 @@ class Rpc {
     /* curl send session handle */
     static CURL *curl_send;
 
+    /* indicates whether the daemon supports getdata rpc call */
+    bool has_getdata;
+
+    /* checks whether the daemon supports getdata rpc call */
+    bool check_getdata();
 
     /* private constructor to allow only one instance */
     Rpc();

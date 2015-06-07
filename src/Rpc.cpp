@@ -153,7 +153,7 @@ void Rpc::cleanup() {
 Rpc *Rpc::get_instance() {
 
   pthread_mutex_lock(&creation_mutex);
-  if (!initialized) {
+  if (!initialized && curl_initialized) {
     only_instance = new Rpc();
     initialized   = true;
   }
@@ -163,7 +163,9 @@ Rpc *Rpc::get_instance() {
 }
 
 /* private constructor */
-Rpc::Rpc() { }
+Rpc::Rpc() {
+  this->has_getdata = check_getdata();
+}
 
 /* destructor */
 Rpc::~Rpc() { }
@@ -217,6 +219,49 @@ string Rpc::call_rpc(string method, string params) {
   pthread_mutex_unlock(&send_mutex);
 
   return ret;
+}
+
+/* checks whether the daemon supports getdata rpc call */
+bool Rpc::check_getdata() {
+
+  string response = call_rpc("help", "");
+
+  /* parse response */
+  json_t *root;
+  json_error_t error;
+
+  root = json_loads(response.c_str(), 0, &error);
+
+  if(!root) {
+    log_str("jansson error: on line " + itoa(error.line) + ": " + 
+            string(error.text) + ": " + response, LOG_E);
+    return 0;
+  }
+
+  if (!json_is_object(root)) {
+    log_err("can not parse server response: " + response, LOG_E);
+    json_decref(root);
+    return 0;
+  }
+  json_t *result = json_object_get(root, "result");
+
+  if (!json_is_string(result)) {
+    log_err("can not parse server response: " + response, LOG_E);
+    json_decref(root);
+    return 0;
+  }
+
+  bool res = false;
+  vector<string> help = split(json_string_value(result), "\n");
+  for (unsigned i = 0; i < help.size(); i++) {
+    if (help[i] == "getdata <hash>") {
+      res = true;
+      break;
+    }
+  }
+  json_decref(root);
+
+  return res;
 }
 
 /* returns the number of blocks */
@@ -351,37 +396,81 @@ vector<string> Rpc::getblocktransactions(unsigned height) {
 /* returns the base64 encoded transaction data */
 string Rpc::getdata(string txhash) {
 
-  string response = call_rpc("getdata", "\"" + txhash + "\"");
+  if (has_getdata) {
 
-  /* parse response */
-  json_t *root;
-  json_error_t error;
-
-  root = json_loads(response.c_str(), 0, &error);
-
-  if(!root) {
-    log_str("jansson error: on line " + itoa(error.line) + ": " + 
-            string(error.text) + ": " + response, LOG_E);
-    return "";
-  }
-
-  if (!json_is_object(root)) {
-    log_err("can not parse server response: " + response, LOG_E);
+    string response = call_rpc("getdata", "\"" + txhash + "\"");
+ 
+    /* parse response */
+    json_t *root;
+    json_error_t error;
+ 
+    root = json_loads(response.c_str(), 0, &error);
+ 
+    if(!root) {
+      log_str("jansson error: on line " + itoa(error.line) + ": " + 
+              string(error.text) + ": " + response, LOG_E);
+      return "";
+    }
+ 
+    if (!json_is_object(root)) {
+      log_err("can not parse server response: " + response, LOG_E);
+      json_decref(root);
+      return "";
+    }
+    json_t *result = json_object_get(root, "result");
+ 
+    if (!json_is_string(result)) {
+      log_err("can not parse server response: " + response, LOG_E);
+      json_decref(root);
+      return "";
+    }
+ 
+    string txdata = json_string_value(result);
     json_decref(root);
-    return "";
-  }
-  json_t *result = json_object_get(root, "result");
+ 
+    return b64_to_byte(txdata);
+  } else {
+    
+    string response = call_rpc("getrawtransaction", "\"" + txhash + "\", 1");
+    
+    /* parse response */
+    json_t *root;
+    json_error_t error;
+ 
+    root = json_loads(response.c_str(), 0, &error);
+ 
+    if(!root) {
+      log_str("jansson error: on line " + itoa(error.line) + ": " + 
+              string(error.text) + ": " + response, LOG_E);
+      return "";
+    }
+ 
+    if (!json_is_object(root)) {
+      log_err("can not parse server response: " + response, LOG_E);
+      json_decref(root);
+      return "";
+    }
+    json_t *result = json_object_get(root, "result");
+ 
+    if (!json_is_object(result)) {
+      log_err("can not parse server response: " + response, LOG_E);
+      json_decref(root);
+      return "";
+    }
 
-  if (!json_is_string(result)) {
-    log_err("can not parse server response: " + response, LOG_E);
+    json_t *data = json_object_get(result, "data");
+
+    if (!json_is_string(data)) {
+      log_err("can not parse server response: " + response, LOG_E);
+      json_decref(root);
+      return "";
+    }
+ 
+    string txdata = json_string_value(data);
     json_decref(root);
-    return "";
+ 
+    return b64_to_byte(txdata);
   }
-
-  string txdata = json_string_value(result);
-  json_decref(root);
-
-  return b64_to_byte(txdata);
 }
 
 
