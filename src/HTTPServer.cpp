@@ -103,8 +103,12 @@ string HTTPServer::upload_error = "";
 /* the local directly */
 string HTTPServer::local_dir = "";
 
+/* the web server port */
+unsigned HTTPServer::port = SERVER_PORT;
+    
+
 /* return the only instance of this */
-HTTPServer *HTTPServer::get_instance(string local_dir) {
+HTTPServer *HTTPServer::get_instance(string local_dir, unsigned port) {
 
   pthread_mutex_lock(&creation_mutex);
   if (!initialized) {
@@ -113,6 +117,7 @@ HTTPServer *HTTPServer::get_instance(string local_dir) {
       local_dir = local_dir + "/";
 
     HTTPServer::local_dir = local_dir;
+    HTTPServer::port      = port;
     only_instance = new HTTPServer();
     initialized   = true;
   }
@@ -124,7 +129,7 @@ HTTPServer *HTTPServer::get_instance(string local_dir) {
 
 /* private constructor to allow only one instance of this */
 HTTPServer::HTTPServer() {
-  daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION, PORT, NULL, NULL, 
+  daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION, port, NULL, NULL, 
                             &connection_callback, NULL, 
                             MHD_OPTION_NOTIFY_COMPLETED, &cleanup, NULL, 
                             MHD_OPTION_END);

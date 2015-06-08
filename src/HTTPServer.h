@@ -23,7 +23,7 @@
 #include "Database.h"
 #include "StoreFileProcess.h"
 
-#define PORT 8080
+#define SERVER_PORT 8080
 
 /* the current server version */
 #define SERVER_VERSION 1
@@ -79,6 +79,9 @@ class HTTPServer {
 
     /* the local directly */
     static string local_dir;
+
+    /* the web server port */
+    static unsigned port;
     
     /* clean up post function */
     static void cleanup(void *cls, 
@@ -130,7 +133,7 @@ class HTTPServer {
   public:
     
     /* return the only instance of this */
-    static HTTPServer *get_instance(string local_dir = "");
+    static HTTPServer *get_instance(string local_dir = "", unsigned port = SERVER_PORT);
 
 };
 #endif /* __HTTPSERVER_H__ */

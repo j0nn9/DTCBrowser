@@ -30,6 +30,7 @@
 "      --scan-all                 scan the whole blockchain                \n"\
 "      --testnet                  connect to testnet                       \n"\
 "      --local [DIR]              run additional local server in DIR       \n"\
+"      --port [NUM]               run server at given port NUM             \n"\
 "      --tx-types                 list all tx types                        \n"\
 "      --tx-type [TYPE]           list all txids with the given type       \n"\
 "  -s  --store [FILE]             store FILE in the blockchain             \n"\
@@ -50,6 +51,7 @@
 "      --scan-all                 scan the whole blockchain                \n"\
 "      --testnet                  connect to testnet                       \n"\
 "      --local [DIR]              run additional local server in DIR       \n"\
+"      --port [NUM]               run server at given port NUM             \n"\
 "      --license                  print license information                \n"\
 "  -h  --help                     print this message                       \n"
 #endif
@@ -103,18 +105,22 @@ int main(int argc, char *argv[]) {
   }
 #endif
   
-  string port = "11777";
+  string daemon_port = "11777";
   string db_file = "dtc.db";
   bool testnet = false;
+  unsigned server_port = SERVER_PORT;
+
+  if (has_arg("--port"))
+    server_port = get_i_arg("--port");
 
   if (has_arg("--testnet")) {
-    port = "11776";
+    daemon_port = "11776";
     db_file = "dtc-testnet.db";
     testnet = true;
   }
 
   Rpc::init_curl(get_arg("-u", "--rpc-user") + ":" + get_arg("-p", "--rpc-passwd"),
-                 "localhost:" + port);
+                 "localhost:" + daemon_port);
 
 
   if (has_arg("--scan-all")) {
@@ -124,9 +130,9 @@ int main(int argc, char *argv[]) {
   }
 
   if (has_arg("--local"))
-    HTTPServer::get_instance(get_arg("--local"));
+    HTTPServer::get_instance(get_arg("--local"), server_port);
   else
-    HTTPServer::get_instance();
+    HTTPServer::get_instance("", server_port);
 
 #ifdef DEBUG
   if (has_arg("--tx-types")) {
