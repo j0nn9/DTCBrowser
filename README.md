@@ -19,6 +19,16 @@ Any participation is welcome and encouraged.
 
 Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
 
+### Dependent libraries:
+  `bzip2-1.0.6` <br />
+  `curl-7.42.1` <br />
+  `file-5.22        (libmagic)` <br />
+  `jansson-2.7` <br />
+  `libmicrohttpd-0.9.42` <br />
+  `openssl-1.0.2a` <br />
+  `protobuf-2.6.1` <br />
+  `sqlite-3.8.8.3`
+
 ## Getting started:
 - Linux:
   - add something like: <br />
