@@ -276,7 +276,7 @@ Database::Database(const char *path, bool scann_fast, bool testnet) {
     }
 
     /* create table structure */
-    char *tx, *hashes, *envelope, *insert, *my_files, *file_txids; 
+    char *tx, *envelope, *insert, *my_files, *file_txids; 
     tx = "CREATE TABLE TX("                                  \
          "id INTEGER PRIMARY KEY AUTOINCREMENT,"             \
          "id_block       INT                   NOT NULL,"    \
@@ -284,10 +284,6 @@ Database::Database(const char *path, bool scann_fast, bool testnet) {
          "txid           CHAR(64)              NOT NULL,"    \
          "type           CHAR(64)              NOT NULL);";
     
-    hashes = "CREATE TABLE BLOCKS("                          \
-             "id INT NOT NULL,"                              \
-             "PRIMARY KEY(id));";
-
     envelope = "CREATE TABLE ENVELOPE("                      \
                "id INTEGER PRIMARY KEY AUTOINCREMENT,"       \
                "filename             TEXT        ,"          \
@@ -325,8 +321,7 @@ Database::Database(const char *path, bool scann_fast, bool testnet) {
                  "error            TEXT                  );";
                
 
-    insert = "INSERT INTO BLOCKS (id) VALUES (0);"                        \
-             "INSERT INTO ENVELOPE (id, compression) VALUES (0, 0);"      \
+    insert = "INSERT INTO ENVELOPE (id, compression) VALUES (0, 0);"      \
              "INSERT INTO TX (id, id_block, txid, type) VALUES "          \
              "(0, 0, '0x0', 'null');";
 
@@ -334,9 +329,6 @@ Database::Database(const char *path, bool scann_fast, bool testnet) {
     char *err_msg = NULL;
     if (sqlite3_exec(db, tx, NULL, NULL, &err_msg))
       log_err("Failed to create table tx: " + string(err_msg), LOG_EE);
-
-    if (sqlite3_exec(db, hashes, NULL, NULL, &err_msg))
-      log_err("Failed to create table blocks: " + string(err_msg), LOG_EE);
 
     if (sqlite3_exec(db, envelope, NULL, NULL, &err_msg))
       log_err("Failed to create table envelope: " + string(err_msg), LOG_EE);
@@ -382,7 +374,7 @@ Database::~Database() {
 /* returns the last parsed block */
 unsigned Database::get_height() {
 
-  char *select = "SELECT MAX(id) FROM BLOCKS;";
+  char *select = "SELECT MAX(id_block) FROM TX;";
   sqlite3_stmt* query = NULL;
 
   if (sqlite3_prepare_v2(db, select, -1, &query, NULL) != SQLITE_OK) {
@@ -590,14 +582,6 @@ unsigned Database::db_insert(unsigned block, vector<string> txids) {
     txcount++;
   }
 
-  if (txcount) {
-    char sql[64];
-    sprintf(sql, "INSERT INTO BLOCKS (id) VALUES (%u);", block);
-    
-    if (sqlite3_exec(db, sql, NULL, NULL, &err_msg))
-      log_err("Failed to insert block: " + string(err_msg), LOG_W);
-  }
-
   return txcount;
 }
   
@@ -609,7 +593,6 @@ void Database::parse_blocks() {
   unsigned blockcount = rpc->getblockcount() - 4;
   unsigned height = get_height();
   unsigned txcount = 0;
-  char *err_msg = NULL;
   
   for (unsigned i = height + 1; i <= blockcount; i++) {
 
@@ -618,15 +601,6 @@ void Database::parse_blocks() {
     vector<string> tx = rpc->getblocktransactions(i);
 
     txcount += db_insert(i, tx);  
-  }
-
-  if (get_height() < blockcount) {
-  
-    char sql[64];
-    sprintf(sql, "INSERT INTO BLOCKS (id) VALUES (%u);", blockcount);
-  
-    if (sqlite3_exec(db, sql, NULL, NULL, &err_msg))
-      log_err("Failed to insert block: " + string(err_msg), LOG_EE);
   }
 
   if (blockcount - height)
