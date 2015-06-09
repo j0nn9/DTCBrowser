@@ -27,6 +27,10 @@
 
 #ifdef DEBUG
 #define HELP \
+"  DTCBrowser  Copyright (C)  2015  Jonny Frey  <j0nn9.fr39@gmail.com>     \n"\
+"                                                                          \n"\
+"  -u  --rpc-user                 datacoin rpc username                    \n"\
+"  -p  --rpc-passwd               datacoin rpc password                    \n"\
 "      --scan-all                 scan the whole blockchain                \n"\
 "      --testnet                  connect to testnet                       \n"\
 "      --local [DIR]              run additional local server in DIR       \n"\
@@ -130,9 +134,9 @@ int main(int argc, char *argv[]) {
   }
 
   if (has_arg("--local"))
-    HTTPServer::get_instance(get_arg("--local"), server_port);
+    HTTPServer::get_instance(get_arg("--local"), server_port, testnet);
   else
-    HTTPServer::get_instance("", server_port);
+    HTTPServer::get_instance("", server_port, testnet);
 
 #ifdef DEBUG
   if (has_arg("--tx-types")) {
