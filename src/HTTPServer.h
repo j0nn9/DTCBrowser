@@ -30,6 +30,7 @@
 
 /* Datacoin Browser main page */
 #define MAIN_PAGE "15ca9c05b69c785bfcc8abc31ede491898e455da3a27b9a8ac6caa3b5c67c227"
+#define MAIN_PAGE_TESTNET "557d6d7ad790ce4e392235fa50741b9a626a74290624cf69a5d2a8e2db9c9c15"
 
 using namespace std;
 
@@ -82,6 +83,9 @@ class HTTPServer {
 
     /* the web server port */
     static unsigned port;
+
+    /* indicates whether we are in testnet mode */
+    static bool testnet;
     
     /* clean up post function */
     static void cleanup(void *cls, 
@@ -133,7 +137,9 @@ class HTTPServer {
   public:
     
     /* return the only instance of this */
-    static HTTPServer *get_instance(string local_dir = "", unsigned port = SERVER_PORT);
+    static HTTPServer *get_instance(string local_dir = "", 
+                                    unsigned port = SERVER_PORT,
+                                    bool testnet = false);
 
 };
 #endif /* __HTTPSERVER_H__ */

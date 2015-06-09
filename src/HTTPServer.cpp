@@ -106,9 +106,13 @@ string HTTPServer::local_dir = "";
 /* the web server port */
 unsigned HTTPServer::port = SERVER_PORT;
     
+/* indicates whether we are in testnet mode */
+bool HTTPServer::testnet = false;
 
 /* return the only instance of this */
-HTTPServer *HTTPServer::get_instance(string local_dir, unsigned port) {
+HTTPServer *HTTPServer::get_instance(string local_dir, 
+                                     unsigned port,
+                                     bool testnet) {
 
   pthread_mutex_lock(&creation_mutex);
   if (!initialized) {
@@ -118,6 +122,7 @@ HTTPServer *HTTPServer::get_instance(string local_dir, unsigned port) {
 
     HTTPServer::local_dir = local_dir;
     HTTPServer::port      = port;
+    HTTPServer::testnet   = testnet;
     only_instance = new HTTPServer();
     initialized   = true;
   }
@@ -182,7 +187,7 @@ int HTTPServer::process_get(struct MHD_Connection *connection, const char *url) 
     txid = string(url + 9, 64);
 
   if (strlen(url) == 1 && !strncmp(url, "/", 1))
-    txid = MAIN_PAGE;
+    txid = (testnet ? MAIN_PAGE_TESTNET : MAIN_PAGE);
   
   if (db->is_envelope(txid))
     tx = db->reasemble_envelope(txid);
