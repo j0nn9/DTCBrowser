@@ -45,6 +45,7 @@
 "  -d  --tx-data [HASH]           get tx data for th given HASH            \n"\
 "      --sha256 [FILE]            create the sha256 sum form file          \n"\
 "      --magic [FILE]             prints the content type of file          \n"\
+"      --insert-dummy [B,T]       insert B dummy blocks, with T txids each \n"\
 "  -h  --help                     print this message                       \n"
 #else
 #define HELP \
@@ -139,6 +140,15 @@ int main(int argc, char *argv[]) {
     HTTPServer::get_instance("", server_port, testnet);
 
 #ifdef DEBUG
+  if (has_arg("--insert-dummy")) {
+    vector<string> tmp = split(get_arg("--insert-dummy"), ",");
+    uint64_t blocks = atoll(tmp[0].c_str());
+    unsigned txids  = atoi(tmp[1].c_str());
+
+    Database::get_instance()->create_dummy_data(blocks, txids);
+  }
+
+
   if (has_arg("--tx-types")) {
     vector<string> txs = Database::get_instance()->get_file_types();
 

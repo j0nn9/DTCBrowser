@@ -29,6 +29,44 @@
 
 using namespace std;
 
+#ifdef DEBUG
+#ifdef DEBUG_SQLITE_SPEED
+int sqlite3_exec_speed_check(
+    sqlite3 *db,                               /* An open database */
+    const char *sql,                           /* SQL to be evaluated */
+    int (*callback)(void*,int,char**,char**),  /* Callback function */
+    void *arg,                                 /* 1st argument to callback */
+    char **errmsg                              /* Error msg written here */
+    ) {
+  
+  uint64_t start = gettime_usec();
+  int ret = sqlite3_exec(db, sql, callback, arg, errmsg);
+  log_str("SQL SPEED[" + itoa(gettime_usec() - start) + "]: " + string(sql), LOG_D);
+
+  return ret;
+}
+
+int sqlite3_prepare_v2_speed_check(
+    sqlite3 *db,            /* Database handle */
+    const char *zSql,       /* SQL statement, UTF-8 encoded */
+    int nByte,              /* Maximum length of zSql in bytes. */
+    sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+    const char **pzTail     /* OUT: Pointer to unused portion of zSql */
+    ) {
+
+  uint64_t start = gettime_usec();
+  int ret = sqlite3_prepare_v2(db, zSql, nByte, ppStmt, pzTail);
+  log_str("SQL SPEED[" + itoa(gettime_usec() - start) + "]: " + string(zSql), LOG_D);
+
+  return ret;
+}
+
+#define sqlite3_exec sqlite3_exec_speed_check
+#define sqlite3_prepare_v2 sqlite3_prepare_v2_speed_check
+#endif
+#endif
+
+
 #define sqlite3_column_string(query, column)                          \
   ((sqlite3_column_text(query, column) == NULL) ? string("") :        \
    string((char *) sqlite3_column_text(query, column)))
@@ -1385,3 +1423,129 @@ bool Database::is_envelope(string txid) {
   return id_envelope > 0;
 
 }
+
+/* returns the txid for a given datahash */
+string Database::gettxid_by_datahash(string datahash) {
+
+  string select = "SELECT txid FROM TX INNER JOIN ENVELOPE ON TX.id_envelope="\
+                  "ENVELOPE.id WHERE ENVELOPE.datahash='" + datahash + "';";
+
+  sqlite3_stmt* query = NULL;
+
+  if (sqlite3_prepare_v2(db, select.c_str(), -1, &query, NULL) != SQLITE_OK) {
+    log_err("Failed to prepare select: " + string(sqlite3_errmsg(db)), LOG_E);
+    return "";
+  }
+
+  if (SQLITE_ROW != sqlite3_step(query)) {
+    log_err("Failed to step: " + string(sqlite3_errmsg(db)), LOG_E);
+    return "";
+  }
+
+  string txid = sqlite3_column_string(query, 0);
+  sqlite3_finalize(query);
+
+  return txid;
+}
+
+/* creat dummy data */
+#ifdef DEBUG
+
+#define randr(rand, start, end) ((rand32(rand) % (end - start)) + start)
+
+static inline string rand_str(uint32_t *rand, unsigned len) {
+  
+  static const string base = "1234567890qwertzuiop+asdfghjkl#yxcvbnm,.-<"\
+                            "!§$%&/()=?QWERTZUIOP*ASDFGHJKLYXCVBNM;:_>";
+  static const unsigned size = base.length();
+
+  stringstream ss;
+
+  for (unsigned i = 0; i < len; i++)
+    ss << base[rand32(rand) % size];
+
+  return ss.str();
+}
+
+void Database::create_dummy_data(uint64_t blocks, unsigned block_txids) {
+  
+  unsigned height = get_height();
+  uint32_t rand = time(NULL);
+  char *err_msg = NULL;
+
+  for (uint64_t i = height + 1; i < (blocks + height); i++) {
+    
+    for (unsigned n = 0; n < block_txids; n++) {
+
+      stringstream ss;
+      ss << "INSERT INTO ENVELOPE (filename, compression, publickey,";
+      ss << " signature, partnumber, totalparts, prevtxid, prevdatahash, ";
+      ss << "datahash, datetime, version) VALUES (";
+      ss << "\"" << rand_str(&rand, randr(&rand, 4, 60)) << "\", ";
+      ss << rand32(&rand) % 3 << ", ";
+      ss << "\"" << rand_str(&rand, 34) << "\", ";
+      ss << "\"" << rand_str(&rand, 88) << "\", ";
+      ss << rand32(&rand) % 10 << ", ";
+      ss << rand32(&rand) % 10 << ", ";
+      ss << "\"" << rand_str(&rand, 64) << "\", ";
+      ss << "\"" << rand_str(&rand, 64) << "\", ";
+      ss << "\"" << rand_str(&rand, 64) << "\", ";
+      ss << rand32(&rand) << ", 2);";
+      
+      if (sqlite3_exec(db, ss.str().c_str(), NULL, NULL, &err_msg)) {
+        log_err("Failed to insert tx: " + string(err_msg) + "SQL: " + 
+                ss.str(), LOG_EE);
+      }
+      
+        
+      ss.str("");
+      ss << "INSERT INTO TX (id_block, id_envelope, txid, type) VALUES (";
+      ss << i << ", " << get_max_envelope();
+  
+      ss << ", \"" <<  rand_str(&rand, 64) << "\", \"" << rand_str(&rand, randr(&rand, 10, 60)) << "\");";
+  
+      if (sqlite3_exec(db, ss.str().c_str(), NULL, NULL, &err_msg))
+        log_err("Failed to insert tx: " + string(err_msg), LOG_EE);
+
+    }
+    log_str("creating dummy data: " + itoa(i - height) + " / " + itoa(blocks));
+  }
+
+  string select = "SELECT count(*) FROM TX;";
+  sqlite3_stmt* query = NULL;
+
+  if (sqlite3_prepare_v2(db, select.c_str(), -1, &query, NULL) != SQLITE_OK) {
+    log_err("Failed to prepare select: " + string(sqlite3_errmsg(db)), LOG_E);
+    return;
+  }
+
+  if (SQLITE_ROW != sqlite3_step(query)) {
+    log_err("Failed to prepare select: " + string(sqlite3_errmsg(db)), LOG_E);
+    return;
+  }
+
+  unsigned tx_count = sqlite3_column_int(query, 0);
+  sqlite3_finalize(query);
+
+
+  select = "SELECT count(*) FROM ENVELOPE;";
+  query = NULL;
+
+  if (sqlite3_prepare_v2(db, select.c_str(), -1, &query, NULL) != SQLITE_OK) {
+    log_err("Failed to prepare select: " + string(sqlite3_errmsg(db)), LOG_E);
+    return;
+  }
+
+  if (SQLITE_ROW != sqlite3_step(query)) {
+    log_err("Failed to prepare select: " + string(sqlite3_errmsg(db)), LOG_E);
+    return;
+  }
+
+  unsigned envelope_count = sqlite3_column_int(query, 0);
+  sqlite3_finalize(query);
+
+  log_str("Insertetd: " + itoa(blocks) + " with " + itoa(block_txids) + 
+          " dummy txids each:\n" + "TX count: " + itoa(tx_count) + 
+          "\nENVELOPE count: " + itoa(envelope_count));
+}
+#endif

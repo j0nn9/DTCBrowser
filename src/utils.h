@@ -24,6 +24,20 @@
 #include <string>
 #include <string.h>
 #include <vector>
+#ifdef DEBUG
+#include <sys/time.h>
+
+inline uint64_t gettime_usec() {
+
+  struct timeval time;
+  if (gettimeofday(&time, NULL) == -1)
+    return ((uint64_t) -1);
+
+  return ((uint64_t) time.tv_sec) * ((uint64_t) 1000000) + 
+         ((uint64_t) time.tv_usec);
+}
+
+#endif
 
 using namespace std;
 
@@ -211,6 +225,4 @@ void log_str(string msg, unsigned log_level = LOG_I);
   log_str(string("[") + __FILE__ + ":" + itoa(__LINE__) + "] " + str, status)
 
 string str_repleace(string str, string src, string target);
-
-
 #endif /* __UTILS_H__ */

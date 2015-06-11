@@ -177,5 +177,11 @@ class Database {
     /* returns whether the given txid is an Envelope */
     bool is_envelope(string txid);
           
+    /* returns the txid for a given datahash */
+    string gettxid_by_datahash(string datahash);
+
+    #ifdef DEBUG
+    void create_dummy_data(uint64_t blocks, unsigned block_txids);
+    #endif
 };
 #endif /* __DATABASE_H__ */
