@@ -134,6 +134,12 @@ class HTTPServer {
      */
     static int process_lsrpc(struct MHD_Connection *connection, const char *url);
 
+    /**
+     * processes form data send via get requests
+     */
+    static int process_form_data(void *cls, enum MHD_ValueKind kind,
+                                 const char *key, const char *value);
+
   public:
     
     /* return the only instance of this */

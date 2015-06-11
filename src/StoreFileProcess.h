@@ -98,6 +98,27 @@ class StoreFileProcess {
 
     /* clear errors */
     void clear_errors();
+
+    /* returns the byte size of this */
+    unsigned byte_size();
+
+    /* returns the data of this */
+    string get_data();
+
+    /* get data type */
+    string get_content_type();
+
+    /* get upload status */
+    string get_upload_status();
+
+    /* starts the upload process */
+    void start_upload();
+
+    /* aborts the upload process */
+    void abort();
+
+    /* returns the update txid */
+    string get_upload_txid();
 };
 
 #endif /* __STORE_FILE_PROCESS_H__ */

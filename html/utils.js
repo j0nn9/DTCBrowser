@@ -97,3 +97,7 @@ function getCookie(name) {
   }
   return "";
 }
+
+function asyn_alert(message) {
+  setTimeout(function() { alert(message); }, 1);
+}

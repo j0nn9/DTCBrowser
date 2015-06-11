@@ -66,16 +66,16 @@ using namespace std;
    !strncmp(url + net_prefix.length(), pattern, strlen(pattern)))
 
 /* checks the given url string for equality */
-#define stdurl_equal(url, pattern) \
-  (strlen(url) == strlen(pattern) && !strncmp(url, pattern, strlen(pattern)))
+#define cstr_equal(cstr, pattern) \
+  (strlen(cstr) == strlen(pattern) && !strncmp(cstr, pattern, strlen(pattern)))
 
-/* checks url to begin with */
-#define stdurl_begin_with(url, pattern) \
-  (strlen(url) > strlen(pattern) && !strncmp(url, pattern, strlen(pattern)))
+/* checks cstr to begin with */
+#define cstr_begin_with(cstr, pattern) \
+  (strlen(cstr) > strlen(pattern) && !strncmp(cstr, pattern, strlen(pattern)))
 
-/* checks url to begin with pattern, ans also has a specific length */
-#define stdurl_len(url, pattern, len) \
-  (strlen(url) == len && !strncmp(url, pattern, strlen(pattern)))
+/* checks cstr to begin with pattern, ans also has a specific length */
+#define cstr_len(cstr, pattern, len) \
+  (strlen(cstr) == len && !strncmp(cstr, pattern, strlen(pattern)))
 
 #define POST_REQ 1
 #define GET_REQ  2
@@ -379,8 +379,22 @@ int HTTPServer::process_lsrpc(struct MHD_Connection *connection, const char *url
     if (upload_process != NULL) {
       string filename = upload_process->get_filename();
       filename = str_repleace(filename, "\"", "\\\"");
+
+      string updatetxid = upload_process->get_upload_txid();
       ss << ", \"filename\": \"" << filename << "\"";
       ss << ", \"max_confirmations\": \"" << upload_process->needed_confirmations() << "\"";
+      ss << ", \"preview\": { \"size\": " << upload_process->byte_size();
+      ss << ", \"contenttype\": \"" << upload_process->get_content_type() << "\"";
+      ss << ", \"updatetxid\": \"" << updatetxid << "\"";
+      ss << ", \"updatecontenttype\": \"";
+
+      if (updatetxid.length() == 64) {
+        TX base = db->reasemble_envelope(updatetxid); // TODO replace with updated getenvelope
+        ss << base.get_content();
+      }
+
+      ss << "\"";
+      ss << ", \"status\": \"" << upload_process->get_upload_status() << "\" }";
     }
 
    ss << ", \"error\": \"";
@@ -444,7 +458,53 @@ int HTTPServer::process_lsrpc(struct MHD_Connection *connection, const char *url
     return ret;
   }
 
+  if (url_equal(url, "/lsrpc/getuploaddata")) {
+    
+    string data = "";
+    if (upload_process != NULL)
+      data = upload_process->get_data();
+
+    response = MHD_create_response_from_buffer(data.length(),
+                                                (void*) data.c_str(), MHD_RESPMEM_MUST_COPY);
+    if (upload_process != NULL)
+      MHD_add_response_header(response, "Content-Type", upload_process->get_content_type().c_str());
+   
+    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    MHD_destroy_response (response);
+    return ret;
+  }
+
   return MHD_NO;
+}
+
+/**
+ * processes form data send via get requests
+ */
+int HTTPServer::process_form_data(void *cls, enum MHD_ValueKind kind,
+                                  const char *key, const char *value) {
+
+  (void) cls;
+  (void) kind;
+  log_str("processing key value: " + string(key) + "=" + string(value));
+  
+  if (cstr_equal(key, "uploadaction") && 
+      cstr_equal(value, "upload") && 
+      upload_process != NULL) {
+
+    log_str("starting upload");
+    upload_process->start_upload();
+
+  } else if (cstr_equal(key, "uploadaction") && 
+      cstr_equal(value, "abort") && 
+      upload_process != NULL) {
+
+    upload_process->abort();
+    delete upload_process;
+    upload_process = NULL;
+    upload_error   = "";
+  }
+
+  return MHD_YES;
 }
 
 /* clean up post function */
@@ -609,7 +669,8 @@ int HTTPServer::connection_callback(void *cls, struct MHD_Connection *connection
   if (*con_cls == NULL && !strncmp(method, "POST", 4)) {
     
     pthread_mutex_lock(&post_mutex);
-    if (!uploading && upload_process != NULL && upload_process->stored()) {
+    if (!uploading && upload_process != NULL && (upload_process->stored() ||
+        upload_process->get_upload_status() == "unknown")) {
       delete upload_process;
       upload_process = NULL;
       upload_error   = "";
@@ -674,7 +735,9 @@ int HTTPServer::connection_callback(void *cls, struct MHD_Connection *connection
     /* entry point for redirected post requests */
     process_get_req:
 
-    if (stdurl_equal(url, "/")) {
+    MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &process_form_data, NULL);
+
+    if (cstr_equal(url, "/")) {
       if (local_dir != "")
         return process_local_page(connection, url);
       else
@@ -693,7 +756,7 @@ int HTTPServer::connection_callback(void *cls, struct MHD_Connection *connection
     } else if (url_begin_with(url, "/lsrpc/")) {
       return process_lsrpc(connection, url);
  
-    } else if (stdurl_equal(url, "/favicon.ico")) {
+    } else if (cstr_equal(url, "/favicon.ico")) {
       int ret = process_get(connection, FAVICON_URL);
  
       if (ret == MHD_NO)

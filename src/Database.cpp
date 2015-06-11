@@ -630,7 +630,14 @@ void Database::parse_blocks() {
   Rpc *rpc = Rpc::get_instance();
   unsigned blockcount = rpc->getblockcount() - 4;
   unsigned height = get_height();
+  static unsigned lastheight = 0;
   unsigned txcount = 0;
+
+  if (blockcount <= lastheight)
+    return;
+
+  if (lastheight > height)
+    height = lastheight;
   
   for (unsigned i = height + 1; i <= blockcount; i++) {
 
@@ -640,6 +647,7 @@ void Database::parse_blocks() {
 
     txcount += db_insert(i, tx);  
   }
+ lastheight = blockcount;
 
   if (blockcount - height)
     log_str("Parsed " + itoa(blockcount - height) + " blocks from the datacoin daemon");
@@ -911,6 +919,17 @@ bool Database::update_file_status(string datahash, int status) {
     sqlite3_free(err_msg);
     return false;
   }
+
+  /* delete finished uploads */
+  string delete_finished = "DELETE FROM FILE_TXIDS WHERE file_id IN (SELECT "\
+                           "id FROM MY_FILES WHERE status=" + \
+                           itoa(FS_FINISHED) + "); "\
+                           "DELETE FROM MY_FILES WHERE status=" + \
+                           itoa(FS_FINISHED) + ";";
+    
+  if (sqlite3_exec(db, delete_finished.c_str(), NULL, NULL, &err_msg)) 
+    log_err("Failed to delete finished uploads: " + string(err_msg), LOG_W);
+
 
   return true;
 }

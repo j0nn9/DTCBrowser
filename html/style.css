@@ -301,3 +301,35 @@ blockquote{
   margin-left: auto; 
   margin-right: auto;
 }
+
+.upload_file_info {
+  display: block;
+  height: 25px;
+	border-bottom: 1px solid #E1E1E1;
+}
+
+#upload_file_size {
+  display: block;
+  float: left;
+  height: 15px;
+  width: 135px;
+}
+
+#upload_file_cost {
+  display: block;
+  float: right;
+  height: 15px;
+  width: 135px;
+}
+
+.upload_file_content {
+	border-bottom: 1px solid #E1E1E1;
+  overflow: hidden;
+  margin-bottom: 2px;
+  margin-top: 2px;
+}
+
+#upload_preview_form_div {
+  width:100%;
+  text-align: center;
+}

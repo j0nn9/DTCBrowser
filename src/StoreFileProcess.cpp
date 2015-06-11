@@ -183,9 +183,9 @@ void *StoreFileProcess::process(void *args) {
     publickey       = base.get_publickkey();
   }
 
-
-  if (db->get_file_status(self->sha256) == FS_INIT)
-    db->update_file_status(self->sha256, FS_SENDING); 
+  /* wait till we are sending */
+  while (db->get_file_status(self->sha256) == FS_INIT)
+    sleep(1);
   
   if (db->get_file_status(self->sha256) == FS_SENDING) {
     for (unsigned i = 0; i < self->envs.size(); i++) {
@@ -280,4 +280,71 @@ unsigned StoreFileProcess::needed_confirmations() {
 void StoreFileProcess::clear_errors() {
   for (unsigned i = 0; i < errors.size(); i++)
     errors[i] = "";
+}
+
+/* returns the byte size of this */
+unsigned StoreFileProcess::byte_size() {
+  unsigned size = 0;
+  for (unsigned i = 0; i < envs.size(); i++) {
+    if (envs[i]->IsInitialized())
+      size += envs[i]->ByteSize();
+  }
+
+  return size;
+}
+
+/* returns the data of this */
+string StoreFileProcess::get_data() {
+  string data = "";
+
+  for (unsigned i = 0; i < envs.size(); i++) {
+    if (envs[i]->IsInitialized())
+      data += envs[i]->data();
+  }
+
+  if (envs.size() > 0 && envs[0]->compression() == Envelope::Bzip2)
+    data = bzip2_decompress(data);
+
+  return data;
+}
+
+/* get data type */
+string StoreFileProcess::get_content_type() {
+  string type = "";
+  if (envs.size() > 0)
+    type = envs[0]->contenttype();
+
+  return type;
+}
+
+/* get upload status */
+string StoreFileProcess::get_upload_status() {
+  
+  switch (db->get_file_status(sha256)) {
+    case FS_INIT:     return "init";
+    case FS_SENDING:  return "sending";
+    case FS_SENDED:   return "sended";
+    case FS_FINISHED: return "finished";
+  }
+  return "unknown";
+}
+
+/* starts the upload process */
+void StoreFileProcess::start_upload() {
+  if (db->get_file_status(sha256) == FS_INIT)
+    db->update_file_status(sha256, FS_SENDING); 
+}
+
+/* aborts the upload process */
+void StoreFileProcess::abort() {
+  db->update_file_status(sha256, FS_FINISHED); 
+}
+
+
+/* returns the update txid */
+string StoreFileProcess::get_upload_txid() {
+  if (update_datahash.length() == 64)
+    return db->gettxid_by_datahash(update_datahash);
+
+  return "";
 }
