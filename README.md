@@ -29,6 +29,11 @@ Donations are also welcome: DATAcoinJdHGTXbEi8NhaivWtangLJ9L5x
   `protobuf-2.6.1` <br />
   `sqlite-3.8.8.3`
 
+### Nightly builds:
+The release folder always contains the newest <b>unstable</b> builds.
+If you want to contribute, you can run these binaries, and report bugs.
+
+
 ## Getting started:
 - Linux:
   - add something like: <br />
