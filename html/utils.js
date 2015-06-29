@@ -101,3 +101,10 @@ function getCookie(name) {
 function asyn_alert(message) {
   setTimeout(function() { alert(message); }, 1);
 }
+
+/* implement String function endsWith if not provided */
+if (typeof String.prototype.endsWith !== 'function') {
+  String.prototype.endsWith = function(suffix) {
+    return this.indexOf(suffix, this.length - suffix.length) !== -1;
+  };
+}
